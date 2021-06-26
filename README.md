@@ -20,7 +20,7 @@ time test log
 9) ulong<u32, u16, 32> = u1024
 10) ulong<u64, u32, 16> = u1024
 
-<ITERATION TEST..
+<a name="CodeBlocks">ITERATION TEST..
 N = 1000000
 iteration inc
 1 5 4 5
@@ -85,4 +85,5 @@ N = 1000
 14192 3548
 12722 3181
 162814 10176
-138397 8650>
+138397 8650
+</a>
