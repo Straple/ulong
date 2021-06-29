@@ -1,7 +1,10 @@
 ﻿#pragma once
 
-#include <algorithm>
 #include <vector>
+#include <string>
+
+#include <algorithm>
+
 #include <iostream>
 
 using u8 = uint8_t;
@@ -147,7 +150,7 @@ public:
 			copy(value);
 		}
 	}
-	ulong(std::vector<var>& data) {
+	ulong(const std::vector<var>& data) {
 		clear();
 		std::memcpy(word, data.data(), sizeof(var) * std::min(len, data.size()));
 	}
@@ -194,18 +197,23 @@ public:
 	*/
 
 	ulong& operator += (const ulong& add) {
-		bool overflow = 0;
-		for (size_t i = 0; i < len; ++i) {
-
-			word[i] = word[i] + add[i] + overflow;
-			
-			overflow = word[i] < add[i] + overflow;
-		}
-
-		return *this;
+		return *this = *this + add;
 	}
 	ulong operator + (const ulong& add) const {
-		return ulong(*this) += add;
+		ulong res;
+
+		bool overflow = false;
+		for (size_t i = 0; i < len; ++i) {
+
+			var x = add[i] + overflow;
+
+			res[i] = word[i] + x;
+
+			overflow = res[i] < word[i] || res[i] < x || 
+				x < add[i] || x < overflow;
+		}
+
+		return res;
 	}
 
 	ulong& operator -= (const ulong& sub) {
@@ -214,11 +222,14 @@ public:
 	ulong operator - (const ulong& sub) const {
 		ulong res;
 
-		bool overflow = 0;
+		bool overflow = false;
 		for (size_t i = 0; i < len; ++i) {
-			res[i] = word[i] - sub[i] - overflow;
 
-			overflow = word[i] < sub[i] + overflow;
+			var x = sub[i] + overflow;
+
+			res[i] = word[i] - x;
+
+			overflow = word[i] < x || x < sub[i] || x < overflow;
 		}
 
 		return res;
@@ -324,7 +335,7 @@ public:*/
 
 				overflow = k >> half_var_bits;
 
-				res_ptr[i + j] = k - (overflow << half_var_bits);
+				res_ptr[i + j] = static_cast<half_var>(k - (overflow << half_var_bits));
 			}
 		}
 
@@ -332,22 +343,20 @@ public:*/
 	}
 
 private:
-	// сдвиг, не нарушающий целостность числа
-	// -1, если число = 0 (такого сдвига не существует)
-	int get_bit() const {
-		int bit = -1; // сдвиг, не нарушающий целостность div
+	// номер старшего единичного бита с нуля
+	int leading_bit() const {
+		int bit = bit_cnt; // сдвиг, не нарушающий целостность div
 
 		int block = len - 1;
 		for (; block >= 0 && word[block] == 0; --block) {}
 
-		++block;
-		if (block != 0) {
+		if (block != -1) {
 
-			int i = var_bits * block - 1;
+			int i = var_bits * (block + 1) - 1;
 
-			for (; i >= 0 && !(word[i / var_bits] & (static_cast<var>(1) << i % var_bits)); --i) {}
+			for (; i >= 0 && !(word[block] & (static_cast<var>(1) << i % var_bits)); --i) {}
 
-			bit = var_bits * len - i - 1;
+			bit = i;
 		}
 
 		return bit;
@@ -362,7 +371,7 @@ public:
 		ulong res;
 
 		ulong num = *this;
-		for (int bit = div.get_bit(); bit >= 0; --bit) {
+		for (int bit = bit_cnt - div.leading_bit() - 1; bit >= 0; --bit) {
 			auto cur = div << bit;
 			if (cur <= num) {
 				num -= cur;
@@ -377,15 +386,14 @@ public:
 		return *this = *this / div;
 	}
 	ulong operator % (const ulong& div) const {
-
 		ulong num = *this;
-		for (int bit = div.get_bit(); bit >= 0; --bit) {
+
+		for (int bit = bit_cnt - div.leading_bit() - 1; bit >= 0; --bit) {
 			auto cur = div << bit;
 			if (cur <= num) {
 				num -= cur;
 			}
 		}
-
 		return num;
 	}
 
@@ -492,6 +500,35 @@ public:
 			result += static_cast<T>(word[i]) << shift;
 		}
 		return result;
+	}
+
+	ulong sqrt() const {
+		ulong x = 1;
+		bool decreased = false;
+		while (true) {
+			ulong nx = (x + *this / x) >> 1;
+			if (x == nx || nx > x && decreased) {
+				break;
+			}
+			decreased = nx < x;
+			x = nx;
+		}
+		return x;
+	}
+
+	// вернет бинарное представление числа
+	// от младших битов к старшим
+	std::string to_string() const {
+		std::string s;
+		s.reserve(bit_cnt);
+		for (size_t i = 0; i < len; ++i) {
+
+			for (size_t bit = 0; bit < var_bits; bit++) {
+				
+				s += '0' + ((word[i] >> bit) & 1);
+			}
+		}
+		return s;
 	}
 
 	/*
