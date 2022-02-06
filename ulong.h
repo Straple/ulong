@@ -209,8 +209,7 @@ public:
 
 			res[i] = word[i] + x;
 
-			overflow = res[i] < word[i] || res[i] < x || 
-				x < add[i] || x < overflow;
+			overflow = res[i] < word[i] || res[i] < x || x < add[i];
 		}
 
 		return res;
@@ -494,7 +493,7 @@ public:
 	}
 
 	template<typename T>
-	explicit operator T() const { 
+	explicit operator T() const {
 		T result = T{};
 		for (size_t i = 0, shift = 0; i < len; ++i, shift += var_bits) {
 			result += static_cast<T>(word[i]) << shift;
@@ -524,7 +523,7 @@ public:
 		for (size_t i = 0; i < len; ++i) {
 
 			for (size_t bit = 0; bit < var_bits; bit++) {
-				
+
 				s += '0' + ((word[i] >> bit) & 1);
 			}
 		}
@@ -619,4 +618,3 @@ using u128 = ulong<u64, u32, 2>;
 using u256 = ulong<u64, u32, 4>;
 using u512 = ulong<u64, u32, 8>;
 using u1024 = ulong<u64, u32, 16>;
-
