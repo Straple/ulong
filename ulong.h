@@ -228,7 +228,7 @@ public:
 
 			res[i] = word[i] - x;
 
-			overflow = word[i] < x || x < sub[i] || x < overflow;
+			overflow = word[i] < x || x < sub[i];
 		}
 
 		return res;
@@ -382,7 +382,7 @@ public:
 	}
 
 	ulong& operator %= (const ulong& div) {
-		return *this = *this / div;
+		return *this = *this % div;
 	}
 	ulong operator % (const ulong& div) const {
 		ulong num = *this;
