@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+/*
+* [developed by Straple]
+* очень быстрая длинная целочисленная арифметика на битовых числах
+*/
+
 #include <vector>
 #include <string>
 
